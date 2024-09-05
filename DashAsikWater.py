@@ -1,12 +1,13 @@
 import streamlit as st
 import pandas as pd
 import io
+import os
 
 # Title of the app
 st.title("Excel File Processor")
 
 # File uploader
-uploaded_file = st.file_uploader("Upload your Excel file", type=["xlsx"])
+uploaded_file = st.file_uploader("Upload your csv file", type=["csv"])
 
 # Function to convert dataframe to a downloadable Excel file
 def to_excel(df):
@@ -17,29 +18,22 @@ def to_excel(df):
     processed_data = output.getvalue()
     return processed_data
 
-# Process the uploaded file
 if uploaded_file is not None:
-    # Load the Excel file into a DataFrame
-    df = pd.read_excel(uploaded_file)
+    df = pd.read_csv(uploaded_file)
+    correct_format = "%d/%m/%Y %H:%M"
+    df['timestamp'] = pd.to_datetime(df['Date'], format=correct_format)
+    df['month_year'] = df['timestamp'].dt.strftime('%Y-%m')
+    result = df.groupby(['Customer name'])[['Gross sales', 'Cost of goods']].sum().reset_index()
+    
+    file_name_change = os.path.basename(uploaded_file).split('.')[0]
+    result['Profit'] = result['Gross sales'] - result['Cost of goods']
+    new_file_name = f'receipts_Totals_by_month_{file_name_change}.xlsx'
+    row_name = f'receipts_row_by_month_{file_name_change}.xlsx'
 
-    # Display the DataFrame
-    st.write("Original DataFrame")
-    st.write(df)
-
-    # Ensure the column name exists before processing
-    if 'Some Existing Column' in df.columns:
-        # Process the DataFrame (example: adding a new column)
-        df['New Column'] = df['Some Existing Column'] * 2  # Example processing
-
-        # Display the processed DataFrame
-        st.write("Processed DataFrame")
-        st.write(df)
-
-        # Provide a download link for the processed Excel file
-        excel_data = to_excel(df)
-        st.download_button(label="Download Processed Excel",
-                           data=excel_data,
-                           file_name='processed_file.xlsx',
-                           mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    else:
-        st.error("Column 'Some Existing Column' does not exist in the uploaded file.")
+    st.write("Processed DataFrame")
+    st.write(result)
+    excel_data = to_excel(result)
+    st.download_button(label="Download Processed Excel",
+                        data=excel_data,
+                        file_name='processed_file.xlsx',
+                        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
