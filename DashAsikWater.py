@@ -7,7 +7,7 @@ st.title("Interactive Dashboard")
 # Sample DataFrame
 df = pd.DataFrame({
     'Category': ['A', 'B', 'C'],
-    'Values': [100, 200, 500]
+    'Values': [100, 200, 600]
 })
 
 # Dropdown for user selection
